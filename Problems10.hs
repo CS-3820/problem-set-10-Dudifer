@@ -108,7 +108,11 @@ subst x m (Var y)
   | otherwise = Var y
 subst x m (Lam y n) = Lam y (substUnder x m y n)
 subst x m (App n1 n2) = App (subst x m n1) (subst x m n2)
-subst x m n = undefined
+
+subst x m (Throw n) = Throw (subst x m n)
+subst x m (Catch n y h) =
+  Catch (subst x m n) y (if x == y then h else subst x m h)
+
 
 {-------------------------------------------------------------------------------
 
@@ -202,7 +206,31 @@ bubble; this won't *just* be `Throw` and `Catch.
 -------------------------------------------------------------------------------}
 
 smallStep :: (Expr, Expr) -> Maybe (Expr, Expr)
-smallStep = undefined
+smallStep (Const _, acc) = Nothing -- Already evaluated
+smallStep (Plus (Const v1) (Const v2), acc) = Just (Const (v1 + v2), acc)
+smallStep (Plus m1 m2, acc)
+  | isValue m1 = fmap (\(m2', acc') -> (Plus m1 m2', acc')) (smallStep (m2, acc))
+  | otherwise  = fmap (\(m1', acc') -> (Plus m1' m2, acc')) (smallStep (m1, acc))
+smallStep (Store m, acc)
+  | isValue m = Just (Const 0, m) -- Replace accumulator with `m`'s value
+  | otherwise = fmap (\(m', acc') -> (Store m', acc')) (smallStep (m, acc))
+smallStep (Recall, acc) = Just (acc, acc) -- Return current accumulator
+smallStep (Throw m, acc)
+  | isValue m = Just (Throw m, acc)
+  | otherwise = fmap (\(m', acc') -> (Throw m', acc')) (smallStep (m, acc))
+smallStep (Catch m y h, acc)
+  | isValue m = Just (m, acc) -- `m` successfully evaluates to a value
+  | case m of
+      Throw w -> Just (subst y w h, acc) -- Handle exception by substitution
+      _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc))
+smallStep (App (Lam x body) arg, acc)
+  | isValue arg = Just (subst x arg body, acc) -- Function application
+  | otherwise = fmap (\(arg', acc') -> (App (Lam x body) arg', acc')) (smallStep (arg, acc))
+smallStep (App m1 m2, acc)
+  | isValue m1 = fmap (\(m2', acc') -> (App m1 m2', acc')) (smallStep (m2, acc))
+  | otherwise = fmap (\(m1', acc') -> (App m1' m2, acc')) (smallStep (m1, acc))
+smallStep _ = Nothing -- Catch-all case
+
 
 steps :: (Expr, Expr) -> [(Expr, Expr)]
 steps s = case smallStep s of
@@ -211,3 +239,4 @@ steps s = case smallStep s of
 
 prints :: Show a => [a] -> IO ()
 prints = mapM_ print
+--prints (steps (Catch (Plus (Store (Const 2)) (Throw (Const 3))) "y" Recall, Const 0))
