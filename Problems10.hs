@@ -223,10 +223,10 @@ smallStep (Catch m y h, acc)
   | case m of
       Throw w -> Just (subst y w h, acc) -- Handle exception by substitution
       _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc))
-smallStep ((App (Lam x body) arg), acc)
+smallStep (App (Lam x body) arg), acc
   | isValue arg = Just (subst x arg body, acc) -- Function application
   | otherwise = fmap (\(arg', acc') -> ((App (Lam x body) arg)', acc')) (smallStep (arg, acc))
-smallStep (App m1 m2, acc)
+smallStep (App m1 m2), acc
   | isValue m1 = fmap (\(m2', acc') -> (App m1 m2', acc')) (smallStep (m2, acc))
   | otherwise = fmap (\(m1', acc') -> (App m1' m2, acc')) (smallStep (m1, acc))
 smallStep _ = Nothing -- Catch-all case
