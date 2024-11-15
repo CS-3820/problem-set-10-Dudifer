@@ -227,8 +227,8 @@ smallStep (App m1 m2), acc
 smallStep (Catch m y h, acc)
   | isValue m = Just (m, acc) -- `m` successfully evaluates to a value
   | case m of
-      Throw w -> Just (subst y w h, acc) -- Handle exception by substitution
-      _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc)) 
+      (Throw w) -> Just (subst y w h, acc) -- Handle exception by substitution
+      (_)       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc)) 
 smallStep _ = Nothing -- Catch-all case
 
 
