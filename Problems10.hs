@@ -222,7 +222,8 @@ smallStep (Catch m y h, acc)
   | isValue m = Just (m, acc) -- `m` successfully evaluates to a value
   | case m of
       Throw w -> Just (subst y w h, acc) -- Handle exception by substitution
-      _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc))
+      _       -> (Catch m' y h, acc') (smallStep (m, acc))
+--      _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc)) 
 smallStep (App (Lam x body) arg), acc
   | isValue arg = Just (subst x arg body, acc) -- Function application
   | otherwise = fmap (\(arg', acc') -> ((App (Lam x body) arg)', acc')) (smallStep (arg, acc))
