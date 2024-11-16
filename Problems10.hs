@@ -204,6 +204,9 @@ bubble; this won't *just* be `Throw` and `Catch.
 
 -------------------------------------------------------------------------------}
 smallStep :: (Expr, Expr) -> Maybe (Expr, Expr)
+smallStep (Const _, acc) = Nothing -- Terminal case for constants
+smallStep (Var _, acc) = Nothing -- Terminal case for variables
+smallStep (Lam x body, acc) = Nothing -- Terminal case for lambdas
 smallStep (Plus (Const v1) (Const v2), acc) = Just (Const (v1 + v2), acc)
 smallStep (Plus m1 m2, acc)
   | isValue m1 = fmap (\(m2', acc') -> (Plus m1 m2', acc')) (smallStep (m2, acc))
@@ -221,12 +224,13 @@ smallStep (App (Lam x body) arg, acc)
 smallStep (App m1 m2, acc)
   | isValue m1 = fmap (\(m2', acc') -> (App m1 m2', acc')) (smallStep (m2, acc))
   | otherwise = fmap (\(m1', acc') -> (App m1' m2, acc')) (smallStep (m1, acc))
-smallStep (Catch m y h, acc) 
-  | isValue m = Just (m, acc)  -- `m` successfully evaluates to a value
+smallStep (Catch m y h, acc)
+  | isValue m = Just (m, acc) -- `m` successfully evaluates to a value
   | otherwise = case m of
-      Throw w -> Just (subst y w h, acc)  -- Handle exception by substitution
+      Throw w -> Just (subst y w h, acc) -- Handle exception by substitution
       _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc))
-smallstep (e, e2) = Nothing
+smallStep (e, acc) = Nothing -- Fallback case
+
 
 steps :: (Expr, Expr) -> [(Expr, Expr)]
 steps s = case smallStep s of
