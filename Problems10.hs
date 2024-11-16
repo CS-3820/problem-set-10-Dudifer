@@ -206,7 +206,7 @@ bubble; this won't *just* be `Throw` and `Catch.
 -------------------------------------------------------------------------------}
 
 smallStep :: (Expr, Expr) -> Maybe (Expr, Expr)
-smallStep Plus Const v1 Const v2 acc = Just Const (v1 + v2) acc
+smallStep (Plus (Const v1) (Const v2), acc) = Just (Const (v1 + v2), acc)
 smallStep (Plus m1 m2, acc)
   | isValue m1 = fmap (\(m2', acc') -> (Plus m1 m2', acc')) (smallStep (m2, acc))
   | otherwise  = fmap (\(m1', acc') -> (Plus m1' m2, acc')) (smallStep (m1, acc))
