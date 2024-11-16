@@ -94,33 +94,20 @@ be replaced by the substitution?
 
 -------------------------------------------------------------------------------}
 
-smallStep :: (Expr, Expr) -> Maybe (Expr, Expr)
-smallStep (Const _, acc) = Nothing -- Terminal case for constants
-smallStep (Var _, acc) = Nothing -- Terminal case for variables
-smallStep (Lam x body, acc) = Nothing -- Terminal case for lambdas
-smallStep (Plus (Const v1) (Const v2), acc) = Just (Const (v1 + v2), acc)
-smallStep (Plus m1 m2, acc)
-  | isValue m1 = fmap (\(m2', acc') -> (Plus m1 m2', acc')) (smallStep (m2, acc))
-  | otherwise  = fmap (\(m1', acc') -> (Plus m1' m2, acc')) (smallStep (m1, acc))
-smallStep (Store m, acc)
-  | isValue m = Just (Const 0, m) -- Replace accumulator with `m`'s value
-  | otherwise = fmap (\(m', acc') -> (Store m', acc')) (smallStep (m, acc))
-smallStep (Recall, acc) = Just (acc, acc) -- Return current accumulator
-smallStep (Throw m, acc)
-  | isValue m = Just (Throw m, acc)
-  | otherwise = fmap (\(m', acc') -> (Throw m', acc')) (smallStep (m, acc))
-smallStep (App (Lam x body) arg, acc)
-  | isValue arg = Just (subst x arg body, acc) -- Function application
-  | otherwise = fmap (\(arg', acc') -> ((App (Lam x body) arg'), acc')) (smallStep (arg, acc))
-smallStep (App m1 m2, acc)
-  | isValue m1 = fmap (\(m2', acc') -> (App m1 m2', acc')) (smallStep (m2, acc))
-  | otherwise = fmap (\(m1', acc') -> (App m1' m2, acc')) (smallStep (m1, acc))
-smallStep (Catch m y h, acc)
-  | isValue m = Just (m, acc) -- `m` successfully evaluates to a value
-  | otherwise = case m of
-      Throw w -> Just (subst y w h, acc) -- Handle exception by substitution
-      _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc))
-smallStep (e, acc) = Nothing -- Fallback case
+subst :: String -> Expr -> Expr -> Expr
+subst _ _ (Const i) = Const i
+subst x m (Plus n1 n2) = Plus (subst x m n1) (subst x m n2)
+subst x m (Var y) 
+  | x == y    = m
+  | otherwise = Var y
+subst x m (Lam y n) = Lam y (substUnder x m y n)
+subst x m (App n1 n2) = App (subst x m n1) (subst x m n2)
+subst x m (Store e) = Store (subst x m e)
+subst x m Recall = Recall
+subst x m (Throw e) = Throw (subst x m e)
+subst x m (Catch e1 y e2)
+  | x == y    = Catch (subst x m e1) y e2
+  | otherwise = Catch (subst x m e1) y (subst x m e2)
 
 {-------------------------------------------------------------------------------
 
