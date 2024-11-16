@@ -107,11 +107,10 @@ subst x m (Var y)
   | otherwise = Var y
 subst x m (Lam y n) = Lam y (substUnder x m y n)
 subst x m (App n1 n2) = App (subst x m n1) (subst x m n2)
-
-subst x m (Throw n) = Throw (subst x m n)
-subst x m (Catch n y h) =
-  Catch (subst x m n) y (if x == y then h else subst x m h)
-
+subst x m (Store e) = Store (subst x m e)
+subst x m Recall = Recall
+subst x m (Throw e) = Throw (subst x m e)
+subst x m (Catch e1 y e2) = Catch (subst x m e1) y (subst x m e2)
 
 {-------------------------------------------------------------------------------
 
