@@ -230,8 +230,6 @@ smallStep (Catch m y h, acc)
       Throw w -> Just (subst y w h, acc) -- Handle exception by substitution
       _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc)) 
 
-smallStep _ = Nothing -- Catch-all case
-
 
 steps :: (Expr, Expr) -> [(Expr, Expr)]
 steps s = case smallStep s of
