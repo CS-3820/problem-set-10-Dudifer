@@ -41,7 +41,6 @@ data Expr = -- Arithmetic
             -- exceptions
           | Throw Expr | Catch Expr String Expr 
   deriving Eq          
-
 deriving instance Show Expr
 
 -- Here's a show instance that tries to be a little more readable than the
@@ -204,7 +203,6 @@ Lecture 12.  But be sure to handle *all* the cases where exceptions need to
 bubble; this won't *just* be `Throw` and `Catch.
 
 -------------------------------------------------------------------------------}
-
 smallStep :: (Expr, Expr) -> Maybe (Expr, Expr)
 smallStep (Plus (Const v1) (Const v2), acc) = Just (Const (v1 + v2), acc)
 smallStep (Plus m1 m2, acc)
@@ -228,6 +226,7 @@ smallStep (Catch m y h, acc)
   | otherwise = case m of
       Throw w -> Just (subst y w h, acc)  -- Handle exception by substitution
       _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc))
+smallstep (e, e2) = Nothing
 
 steps :: (Expr, Expr) -> [(Expr, Expr)]
 steps s = case smallStep s of
