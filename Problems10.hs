@@ -110,8 +110,9 @@ subst x m (App n1 n2) = App (subst x m n1) (subst x m n2)
 subst x m (Store e) = Store (subst x m e)
 subst x m Recall = Recall
 subst x m (Throw e) = Throw (subst x m e)
-subst x m (Catch e1 y e2) = Catch (subst x m e1) y (subst x m e2)
-
+subst x m (Catch e1 y e2)
+  | x == y    = Catch (subst x m e1) y e2  -- Don't substitute in `e2` because `x` is shadowed
+  | otherwise = Catch (subst x m e1) y (subst x m e2)
 {-------------------------------------------------------------------------------
 
 Problems 3 - 10: Small-step semantics
