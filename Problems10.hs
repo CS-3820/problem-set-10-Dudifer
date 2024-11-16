@@ -224,17 +224,16 @@ smallStep (App (Lam x body) arg, acc)
 smallStep (App m1 m2) acc
   | isValue m1 = fmap (\(m2', acc') -> (App m1 m2', acc')) (smallStep (m2, acc))
   | otherwise = fmap (\(m1', acc') -> (App m1' m2, acc')) (smallStep (m1, acc))
-smallStep (Catch m y h, acc)
-  | isValue m = Just (m, acc) -- `m` successfully evaluates to a value
-  | case m of
-      Throw w -> Just (subst y w h, acc) -- Handle exception by substitution
-      _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc)) 
-
+smallStep (Catch m y h, acc) 
+  | isValue m = Just (m, acc)  -- `m` successfully evaluates to a value
+  | otherwise = case m of
+      Throw w -> Just (subst y w h, acc)  -- Handle exception by substitution
+      _       -> fmap (\(m', acc') -> (Catch m' y h, acc')) (smallStep (m, acc))
 
 steps :: (Expr, Expr) -> [(Expr, Expr)]
-steps (e1, e2) = case smallStep (e1, e2) of
-  Nothing -> [(e1, e2)]
-  Just (e1', e2') -> (e1, e2) : steps (e1', e2')
+steps s = case smallStep s of
+  Nothing -> [s]
+  Just s' -> s : steps s'
 
 prints :: Show a => [a] -> IO ()
 prints = mapM_ print
