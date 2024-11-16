@@ -233,8 +233,8 @@ smallStep (Catch m y h, acc)
 
 steps :: (Expr, Expr) -> [(Expr, Expr)]
 steps s = case smallStep s of
-            Nothing -> [s]
-            Just s' -> s : steps s'
+  Nothing -> [s]
+  Just s' -> s : steps s'
 
 prints :: Show a => [a] -> IO ()
 prints = mapM_ print
